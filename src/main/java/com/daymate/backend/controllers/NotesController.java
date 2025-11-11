@@ -1,12 +1,11 @@
 package com.daymate.backend.controllers;
 
-
-
 import com.daymate.backend.dto.NotesRequest;
 import com.daymate.backend.models.Notes;
-
 import com.daymate.backend.service.NotesService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -14,38 +13,38 @@ import java.util.List;
 @RequestMapping("/api/notes")
 public class NotesController {
     private final NotesService noteService;
-    public NotesController(NotesService noteService) { this.noteService = noteService; }
 
-    // Create note
+    public NotesController(NotesService noteService) {
+        this.noteService = noteService;
+    }
+
     @PostMapping
-    public ResponseEntity<Notes> createNote(@RequestHeader(value = "X-User-Id", required = false) String userId,
-                                           @RequestBody NotesRequest req) {
-        // For now we accept X-User-Id header; replace with authenticated principal later.
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        Notes n = noteService.createNote(userId, req);
+    public ResponseEntity<Notes> createNote(Authentication authentication,
+                                            @RequestBody NotesRequest req) {
+        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
+        Notes n = noteService.createNote(email, req);
         return ResponseEntity.ok(n);
     }
 
-    // Get all notes for user
     @GetMapping
-    public ResponseEntity<List<Notes>> getNotes(@RequestHeader(value = "X-User-Id", required = false) String userId) {
-        if (userId == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(noteService.getNotesByUser(userId));
+    public ResponseEntity<List<Notes>> getNotes(Authentication authentication) {
+        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
+        return ResponseEntity.ok(noteService.getNotesByUser(email));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Notes> updateNote(@PathVariable Long id,
+    public ResponseEntity<Notes> updateNote(Authentication authentication,
+                                           @PathVariable Long id,
                                            @RequestBody NotesRequest req) {
-        return ResponseEntity.ok(noteService.updateNote(id, req));
+        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
+        return ResponseEntity.ok(noteService.updateNote(id, req, email));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
-        noteService.deleteNote(id);
+    public ResponseEntity<Void> deleteNote(Authentication authentication,
+                                           @PathVariable Long id) {
+        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
+        noteService.deleteNote(id, email);
         return ResponseEntity.noContent().build();
     }
 }

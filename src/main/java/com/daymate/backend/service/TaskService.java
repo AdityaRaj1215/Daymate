@@ -1,6 +1,7 @@
 package com.daymate.backend.service;
 
 import com.daymate.backend.dto.TaskRequest;
+import com.daymate.backend.exception.ResourceNotFoundException;
 import com.daymate.backend.models.Task;
 import com.daymate.backend.models.User;
 import com.daymate.backend.repository.TaskRepository;
@@ -20,8 +21,9 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
-    public Task createTask(TaskRequest request, String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    public Task createTask(TaskRequest request, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
@@ -31,13 +33,21 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public List<Task> getTasks(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    public List<Task> getTasks(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return taskRepository.findByUser(user);
     }
 
-    public Task updateTask(Long id, TaskRequest request) {
-        Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
+    public Task updateTask(Long id, TaskRequest request, String email) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        
+        // Verify task belongs to user
+        if (!task.getUser().getEmail().equals(email)) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+        
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         task.setDueDate(request.getDueDate());
@@ -45,12 +55,27 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public void deleteTask(Long id) {
+    public void deleteTask(Long id, String email) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        
+        // Verify task belongs to user
+        if (!task.getUser().getEmail().equals(email)) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+        
         taskRepository.deleteById(id);
     }
 
-    public Task markComplete(Long id) {
-        Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
+    public Task markComplete(Long id, String email) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        
+        // Verify task belongs to user
+        if (!task.getUser().getEmail().equals(email)) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+        
         task.setCompleted(true);
         return taskRepository.save(task);
     }

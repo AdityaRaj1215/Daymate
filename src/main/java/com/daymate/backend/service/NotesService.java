@@ -1,7 +1,7 @@
 package com.daymate.backend.service;
 
-
 import com.daymate.backend.dto.NotesRequest;
+import com.daymate.backend.exception.ResourceNotFoundException;
 import com.daymate.backend.models.Notes;
 import com.daymate.backend.models.Task;
 import com.daymate.backend.models.User;
@@ -25,31 +25,51 @@ public class NotesService {
         this.taskRepository = taskRepository;
     }
 
-    public Notes createNote(String userId, NotesRequest req) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    public Notes createNote(String email, NotesRequest req) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Notes note = new Notes();
         note.setTitle(req.getTitle());
         note.setContent(req.getContent());
         note.setTags(req.getTags());
         note.setUser(user);
         if (req.getLinkedTaskId() != null) {
-            Task t = taskRepository.findById(req.getLinkedTaskId()).orElse(null);
+            Task t = taskRepository.findById(req.getLinkedTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+            // Verify task belongs to user
+            if (!t.getUser().getEmail().equals(email)) {
+                throw new ResourceNotFoundException("Task not found");
+            }
             note.setLinkedTask(t);
         }
         return noteRepository.save(note);
     }
 
-    public List<Notes> getNotesByUser(String userId) {
-        return noteRepository.findByUserId(userId);
+    public List<Notes> getNotesByUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return noteRepository.findByUserId(user.getId());
     }
 
-    public Notes updateNote(Long id, NotesRequest req) {
-        Notes n = noteRepository.findById(id).orElseThrow(() -> new RuntimeException("Note not found"));
+    public Notes updateNote(Long id, NotesRequest req, String email) {
+        Notes n = noteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Note not found"));
+        
+        // Verify note belongs to user
+        if (!n.getUser().getEmail().equals(email)) {
+            throw new ResourceNotFoundException("Note not found");
+        }
+        
         n.setTitle(req.getTitle());
         n.setContent(req.getContent());
         n.setTags(req.getTags());
         if (req.getLinkedTaskId() != null) {
-            Task t = taskRepository.findById(req.getLinkedTaskId()).orElse(null);
+            Task t = taskRepository.findById(req.getLinkedTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+            // Verify task belongs to user
+            if (!t.getUser().getEmail().equals(email)) {
+                throw new ResourceNotFoundException("Task not found");
+            }
             n.setLinkedTask(t);
         } else {
             n.setLinkedTask(null);
@@ -57,7 +77,15 @@ public class NotesService {
         return noteRepository.save(n);
     }
 
-    public void deleteNote(Long id) {
+    public void deleteNote(Long id, String email) {
+        Notes note = noteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Note not found"));
+        
+        // Verify note belongs to user
+        if (!note.getUser().getEmail().equals(email)) {
+            throw new ResourceNotFoundException("Note not found");
+        }
+        
         noteRepository.deleteById(id);
     }
 }

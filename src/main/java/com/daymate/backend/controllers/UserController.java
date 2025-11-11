@@ -1,5 +1,7 @@
-package com.daymate.backend.controller;
+package com.daymate.backend.controllers;
 
+import com.daymate.backend.dto.AuthResponse;
+import com.daymate.backend.dto.LoginRequest;
 import com.daymate.backend.dto.RegisterRequest;
 import com.daymate.backend.dto.UserResponse;
 import com.daymate.backend.models.User;
@@ -18,6 +20,11 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(userService.register(request));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @GetMapping("/{id}")

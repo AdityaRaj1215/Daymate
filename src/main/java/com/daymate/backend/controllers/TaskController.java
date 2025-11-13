@@ -3,6 +3,7 @@ package com.daymate.backend.controllers;
 import com.daymate.backend.dto.TaskRequest;
 import com.daymate.backend.models.Task;
 import com.daymate.backend.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,7 +22,7 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<Task> createTask(Authentication authentication,
-                                           @RequestBody TaskRequest request) {
+                                           @Valid @RequestBody TaskRequest request) {
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         return ResponseEntity.ok(taskService.createTask(request, email));
     }
@@ -35,7 +36,7 @@ public class TaskController {
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(Authentication authentication,
                                           @PathVariable Long id,
-                                          @RequestBody TaskRequest request) {
+                                          @Valid @RequestBody TaskRequest request) {
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         return ResponseEntity.ok(taskService.updateTask(id, request, email));
     }

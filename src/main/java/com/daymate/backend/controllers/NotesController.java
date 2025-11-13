@@ -3,6 +3,7 @@ package com.daymate.backend.controllers;
 import com.daymate.backend.dto.NotesRequest;
 import com.daymate.backend.models.Notes;
 import com.daymate.backend.service.NotesService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +21,7 @@ public class NotesController {
 
     @PostMapping
     public ResponseEntity<Notes> createNote(Authentication authentication,
-                                            @RequestBody NotesRequest req) {
+                                            @Valid @RequestBody NotesRequest req) {
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         Notes n = noteService.createNote(email, req);
         return ResponseEntity.ok(n);
@@ -35,7 +36,7 @@ public class NotesController {
     @PutMapping("/{id}")
     public ResponseEntity<Notes> updateNote(Authentication authentication,
                                            @PathVariable Long id,
-                                           @RequestBody NotesRequest req) {
+                                           @Valid @RequestBody NotesRequest req) {
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         return ResponseEntity.ok(noteService.updateNote(id, req, email));
     }
